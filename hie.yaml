@@ -1,0 +1,12 @@
+cradle:
+  cabal:
+    - path: "./src"
+      component: "lib:utf8-text"
+    - path: "./example"
+      component: "exe:example"
+      
+dependencies:
+  - utf8-text.cabal
+  - default.nix
+  - shell.nix
+  - .hlint.yaml

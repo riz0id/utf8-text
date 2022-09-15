@@ -1,0 +1,19 @@
+- arguments: [
+  --color, 
+  --cpp-simple,
+  -XMagicHash,
+  -XTemplateHaskellQuotes,
+  -XUnboxedTuples,
+  -XUnliftedNewtypes,
+]
+- modules:
+  - {name: '**', qualifiedStyle: post}
+
+  - {name: GHC.Classes, as: GHC, message: "Error: qualify GHC.Exts as GHC"} 
+  - {name: GHC.Exts,    as: GHC, message: "Error: qualify GHC.Exts as GHC"} 
+
+  - {name: GHC.Magic, within: [], message: "Error: use GHC.Exts"} 
+  - {name: GHC.Prim,  within: [], message: "Error: use GHC.Exts"} 
+
+- functions: 
+  - {name: unsafeCoerce#, within: [], message: "unsafeCoerce# is highly unsafe"}
