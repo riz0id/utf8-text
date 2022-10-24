@@ -17,14 +17,14 @@ module Data.Utf8 (
   -- lengthByLeader,
 
   -- * Query
-  -- lengthUtf8Char,
+  lengthUtf8Char,
   lengthUtf8Word8,
   lengthUtf8Word16,
   lengthUtf8Word32,
 ) where
 
-import GHC.Exts (Int (I#))
-import GHC.Word (Word8 (W8#), Word16 (W16#), Word32 (W32#))
+import GHC.Exts (Char (C#), Int (I#))
+import GHC.Word (Word16 (W16#), Word32 (W32#), Word8 (W8#))
 
 --------------------------------------------------------------------------------
 
@@ -32,21 +32,21 @@ import Data.Utf8.Prim qualified as Prim
 
 --------------------------------------------------------------------------------
 
--- | TODO 
+-- | TODO
 --
--- @since 1.0.0 
+-- @since 1.0.0
 -- toUtf8 :: Char -> Word32
 -- toUtf8 (C# c#) = W32# (Prim.toUtf8# c#)
--- {-# INLINE toUtf8 #-}
+-- {\-# INLINE toUtf8 #-\}
 
 -- Query -----------------------------------------------------------------------
 
--- | TODO 
+-- | TODO
 --
--- @since 1.0.0 
--- lengthUtf8 :: Char# -> Int# 
--- lengthUtf8 (C# c#) = I# (Prim.lengthUtf8# c#)
--- {-# INLINE lengthUtf8 #-}
+-- @since 1.0.0
+lengthUtf8Char :: Char -> Int
+lengthUtf8Char (C# c#) = I# (Prim.lengthUtf8Char# c#)
+{-# INLINE lengthUtf8Char #-}
 
 -- | TODO
 --

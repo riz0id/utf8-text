@@ -16,16 +16,19 @@ module Data.Utf8.Prim (
   -- toUtf8#,
 
   -- * Query
-  -- lengthUtf8Char#,
+  lengthUtf8Char#,
   lengthUtf8Word8#,
   lengthUtf8Word16#,
   lengthUtf8Word32#,
 ) where
 
-import GHC.Exts (Addr#, Int#, Word8#, Word16#, Word32#)
+import GHC.Exts (Addr#, Char#, Int#, Word8#, Word16#, Word32#)
 import GHC.Exts qualified as GHC
 
 --------------------------------------------------------------------------------
+
+charToWord32# :: Char# -> Word32# 
+charToWord32# c# = GHC.wordToWord32# (GHC.int2Word# (GHC.ord# c#))
 
 word8ToInt# :: Word8# -> Int# 
 word8ToInt# u8# = GHC.word2Int# (GHC.word8ToWord# u8#)
@@ -44,16 +47,18 @@ word32ToInt# u32# = GHC.word2Int# (GHC.word32ToWord# u32#)
 -- toUtf8# :: Char# -> Word32#
 -- toUtf8# c# = 
 --   let u32# :: Word32# 
---       u32# = _
---    in case lengthUtf8Word32# u32# of 
---         4# -> 
---           _
+--       u32# = charToWord32# c#
+--    in case lengthUtf8Word32# u32# GHC.-# 1# of 
 --         3# -> 
 --           _
 --         2# -> 
---           _ 
---         _ -> 
 --           _
+--         1# -> 
+--           let b1# = _ 
+--               b0# = _
+--            in _
+--         _ -> 
+--           u32#
 
 -- Query -----------------------------------------------------------------------
 
@@ -66,8 +71,12 @@ unsafeIndexUtf8LengthTable# i# =
 -- | TODO 
 --
 -- @since 1.0.0 
--- lengthUtf8Char# :: Char# -> Int# 
--- lengthUtf8Char# c# = _
+lengthUtf8Char# :: Char# -> Int# 
+lengthUtf8Char# c# = 
+  let cmp0# = GHC.geChar# c# '\x80'#
+      cmp1# = GHC.geChar# c# '\x800'#
+      cmp2# = GHC.geChar# c# '\x10000'#
+   in cmp0# GHC.+# cmp1# GHC.+# cmp2# GHC.+# 1#
 
 -- | TODO
 --
