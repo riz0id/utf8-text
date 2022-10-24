@@ -1,8 +1,8 @@
-cabal-version: 2.4
+cabal-version: 3.0
 
 name:        utf8-text
 category:    Data
-version:     1.0.1
+version:     1.0.0
 synopsis:    TODO 
 description: TODO 
 
@@ -24,23 +24,16 @@ tested-with:
 extra-source-files:
   CHANGELOG.md
   README.md
-  cbits
-  include
 
 source-repository head
   type:     git
   location: https://github.com/riz0id/utf8-text
-
-flag llvm
-  Description: Compile using the LLVM backend.
-  Default:     False
-  Manual:      True
-
+  
 common common
   default-language: Haskell2010
 
   default-extensions:
-    ImportQualifiedPost
+    BinaryLiterals ImportQualifiedPost MagicHash NumericUnderscores 
 
   ghc-options:
     -Wall
@@ -49,9 +42,6 @@ common common
     -Widentities
     -Wmissing-export-lists
 
-  if flag(llvm) 
-    ghc-options: -fllvm 
-
   build-depends:
     , base >= 4.15.1 && < 4.17
 
@@ -59,18 +49,7 @@ library
   import:         common
   hs-source-dirs: src
 
-  default-extensions:
-    MagicHash
-
   ghc-options:
-    -ddump-stg-final
-    -ddump-to-file
-    -dsuppress-uniques
-    -dsuppress-module-prefixes
-
-    -fobject-code
-    -fllvm
-
     -- `-j4` is set (as opposed to `-j`) due to the small number of modules that 
     -- are exported by this package.
     -j4
@@ -85,27 +64,48 @@ library
     -- simplifier passes.
     -fmax-simplifier-iterations=20
 
+    -ddump-to-file
+    -ddump-stg-final
+    -ddump-simpl
+    -dppr-cols=120
+    -dsuppress-module-prefixes
+    -dsuppress-uniques
+    -ddump-cmm
+    -ddump-asm
+    
+    -fllvm
+
   build-depends:
     , ghc-prim         >= 0.7.0  && < 0.9
-    , primitive
-    , prim-bool        >= 1.0.1  && < 1.1.0
-    , prim-char        >= 1.0.0  && < 1.1.0
-    , prim-compat      >= 1.0.0  && < 1.1.0
-    , prim-int         >= 1.0.0  && < 1.1.0
     , template-haskell >= 2.17.0 && < 2.19
 
   exposed-modules:
-    Text.Utf8
-    Text.Utf8.Prim
+    Data.Utf8
+    Data.Utf8.Prim
 
-  other-modules:
-  
-  cc-options:
-    -std=c99
-    -O3
+test-suite test
+  import:         common
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is:        Test.hs
 
-  c-sources: cbits/utf8/decode.c
-  includes:  include/utf8/decode.h
+  default-extensions:
+    BlockArguments KindSignatures ScopedTypeVariables
 
-  if flag(llvm)
-    cc-options: -mavx2
+  ghc-options:
+    -threaded
+    -rtsopts
+    "-with-rtsopts=-N"
+
+  build-depends:
+    , hedgehog
+    , utf8-text
+    , tasty
+    , tasty-hedgehog 
+
+  other-modules: 
+    Test.Compat
+    Test.Core
+    Test.Utf8
+    Test.Utf8.Gen
+    Test.Utf8.Length
