@@ -52,28 +52,19 @@ library
   ghc-options:
     -- `-j4` is set (as opposed to `-j`) due to the small number of modules that 
     -- are exported by this package.
-    -j4
+    -j2
 
     -- `-O` is explicitly set since none of the functions exported by this 
     -- library would benefit from higher optimization levels. This helps reduce 
     -- compile times. 
-    -O2
+    -O
 
     -- `-fmax-simplifier-iterations` is set to keep compile times in check. 
     -- The functions in this library are simple and do not need very many 
     -- simplifier passes.
-    -fmax-simplifier-iterations=20
+    -fmax-simplifier-iterations=4
 
-    -ddump-to-file
-    -ddump-stg-final
-    -ddump-simpl
-    -dppr-cols=120
-    -dsuppress-module-prefixes
-    -dsuppress-uniques
-    -ddump-cmm
-    -ddump-asm
-    
-    -fllvm
+    -fregs-iterative
 
   build-depends:
     , ghc-prim         >= 0.7.0  && < 0.9
