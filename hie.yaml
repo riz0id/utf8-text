@@ -2,11 +2,11 @@ cradle:
   cabal:
     - path: "./src"
       component: "lib:utf8-text"
-    - path: "./example"
-      component: "exe:example"
+    - path: "./test"
+      component: "test:test"
       
 dependencies:
-  - utf8-text.cabal
   - default.nix
   - shell.nix
+  - utf8-text.cabal
   - .hlint.yaml
