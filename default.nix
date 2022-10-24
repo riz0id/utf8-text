@@ -1,4 +1,4 @@
-{ ghc ? "ghc902" }:
+{ ghc ? "ghc924" }:
 
 let
   pkgs = import nix/pkgs.nix { 
@@ -6,15 +6,10 @@ let
   };
 in {
   inherit (pkgs.haskell.packages."${ghc}") 
-    utf8-text
-    fourmolu
-    haskell-language-server
-    hlint; 
+    utf8-text;
     
   inherit (pkgs) 
-    cabal-install 
     clang 
     llvm;
-
 }
 
