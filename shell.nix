@@ -6,7 +6,6 @@ let
   };
 in pkgs.utf8-text.env.overrideAttrs (self: {
   buildInputs = self.buildInputs ++ [ 
-    pkgs.clang
-    pkgs.llvm
+  
   ];
 })

@@ -1,4 +1,4 @@
-{ ghc ? "ghc924" }:
+{ ghc }:
 
 let
   pkgs = import nix/pkgs.nix { 
@@ -7,9 +7,5 @@ let
 in {
   inherit (pkgs.haskell.packages."${ghc}") 
     utf8-text;
-    
-  inherit (pkgs) 
-    clang 
-    llvm;
 }
 

@@ -13,6 +13,6 @@ main = defaultMain testTree
 testTree :: TestTree
 testTree =
   testGroup
-    "Test"
+    "test"
     [ Test.Utf8.testTree
     ]

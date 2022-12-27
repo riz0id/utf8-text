@@ -5,8 +5,3 @@ cradle:
     - path: "./test"
       component: "test:test"
       
-dependencies:
-  - default.nix
-  - shell.nix
-  - utf8-text.cabal
-  - .hlint.yaml

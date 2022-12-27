@@ -1,3 +1,4 @@
+{-# LANGUAGE UnboxedTuples #-}
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 -- |
@@ -9,12 +10,25 @@
 -- Stability   :  stable
 -- Portability :  non-portable (GHC extensions)
 --
--- TODO
+-- TODO: docs
 --
 -- @since 1.0.0
 module Data.Utf8 (
-  -- toUtf8,
-  -- lengthByLeader,
+  -- * ByteArray
+  readUtf8Array,
+  writeUtf8Array,
+
+  -- * Encoding
+  ord1,
+  ord2,
+  ord3,
+  ord4,
+
+  -- * Decoding
+  chr1,
+  chr2,
+  chr3,
+  chr4,
 
   -- * Query
   lengthUtf8Char,
@@ -23,21 +37,107 @@ module Data.Utf8 (
   lengthUtf8Word32,
 ) where
 
+import Control.Monad.Primitive (PrimMonad, PrimState, primitive)
+
+import Data.Primitive.ByteArray (MutableByteArray (..), MutableByteArray#)
+import Data.Utf8.Prim qualified as Prim
+
 import GHC.Exts (Char (C#), Int (I#))
 import GHC.Word (Word16 (W16#), Word32 (W32#), Word8 (W8#))
 
---------------------------------------------------------------------------------
+-- ByteArray -------------------------------------------------------------------
 
-import Data.Utf8.Prim qualified as Prim
-
---------------------------------------------------------------------------------
-
--- | TODO
+-- | TODO: docs
 --
 -- @since 1.0.0
--- toUtf8 :: Char -> Word32
--- toUtf8 (C# c#) = W32# (Prim.toUtf8# c#)
--- {\-# INLINE toUtf8 #-\}
+readUtf8Array :: 
+  PrimMonad m => 
+  MutableByteArray (PrimState m) -> 
+  Int -> 
+  m (Char, Int)
+readUtf8Array (MutableByteArray src#) (I# i#) = 
+  primitive \st0# -> case Prim.readUtf8Array# src# i# st0# of 
+    (# st1#, c#, n# #) -> (# st1#, (C# c#, I# n#) #)
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+writeUtf8Array :: 
+  PrimMonad m => 
+  -- | TODO: docs
+  MutableByteArray (PrimState m) -> 
+  -- | TODO: docs
+  Int -> 
+  -- | TODO: docs
+  Char -> 
+  -- | TODO: docs
+  m Int
+writeUtf8Array (MutableByteArray dst#) (I# i#) (C# c#) = 
+  primitive \st0# -> case Prim.writeUtf8Array# dst# i# c# st0# of 
+    (# st1#, n# #) -> (# st1#, I# n# #)
+
+-- Encoding --------------------------------------------------------------------
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+ord1 :: Char -> Word8
+ord1 (C# c#) = W8# (Prim.ord1# c#)
+{-# INLINE ord1 #-}
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+ord2 :: Char -> (Word8, Word8)
+ord2 (C# c#) = case Prim.ord2# c# of 
+  (# x#, y# #) -> (W8# x#, W8# y#)
+{-# INLINE ord2 #-}
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+ord3 :: Char -> (Word8, Word8, Word8)
+ord3 (C# c#) = case Prim.ord3# c# of 
+  (# x#, y#, z# #) -> (W8# x#, W8# y#, W8# z#)
+{-# INLINE ord3 #-}
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+ord4 :: Char -> (Word8, Word8, Word8, Word8)
+ord4 (C# c#) = case Prim.ord4# c# of 
+  (# x#, y#, z#, w# #) -> (W8# x#, W8# y#, W8# z#, W8# w#)
+{-# INLINE ord4 #-}
+
+-- Decoding --------------------------------------------------------------------
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+chr1 :: Word8 -> Char 
+chr1 (W8# x#) = C# (Prim.chr1# x#)
+{-# INLINE chr1 #-}
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+chr2 :: Word8 -> Word8 -> Char 
+chr2 (W8# x#) (W8# y#) = C# (Prim.chr2# x# y#)
+{-# INLINE chr2 #-}
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+chr3 :: Word8 -> Word8 -> Word8 -> Char 
+chr3 (W8# x#) (W8# y#) (W8# z#) = C# (Prim.chr3# x# y# z#)
+{-# INLINE chr3 #-}
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+chr4 :: Word8 -> Word8 -> Word8 -> Word8 -> Char 
+chr4 (W8# x#) (W8# y#) (W8# z#) (W8# w#) = C# (Prim.chr4# x# y# z# w#)
+{-# INLINE chr4 #-}
 
 -- Query -----------------------------------------------------------------------
 
