@@ -77,8 +77,6 @@ library
   build-depends:
     , ghc-prim         >= 0.7.0  && < 0.9
     , primitive        >= 0.7.3  && < 0.8
-    -- , prim-swar        >= 1.0.0  && < 1.1
-    -- , swar             >= 1.0.0  && < 1.1
     , template-haskell >= 2.17.0 && < 2.19
 
   exposed-modules:

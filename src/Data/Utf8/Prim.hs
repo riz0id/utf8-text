@@ -18,6 +18,7 @@
 -- @since 1.0.0
 module Data.Utf8.Prim (
   -- * ByteArray#
+  indexUtf8Array#,
   readUtf8Array#,
   writeUtf8Array#,
 
@@ -42,7 +43,7 @@ module Data.Utf8.Prim (
 
 import Data.Utf8.TH (defineStaticIntArrayQ)
 
-import GHC.Exts (Addr#, Char#, Int#, Word#, Word16#, Word32#, Word8#, State#, MutableByteArray#, Int (..))
+import GHC.Exts (Addr#, Char#, Int#, Word#, Word16#, Word32#, Word8#, State#, MutableByteArray#, Int (..), ByteArray#)
 import GHC.Exts qualified as GHC
 
 --------------------------------------------------------------------------------
@@ -63,6 +64,36 @@ word32ToInt# :: Word32# -> Int#
 word32ToInt# u32# = GHC.word2Int# (GHC.word32ToWord# u32#)
 
 -- ByteArray# ------------------------------------------------------------------
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+indexUtf8Array# :: 
+  -- | TODO: docs
+  ByteArray# -> 
+  -- | TODO: docs
+  Int# -> 
+  -- | TODO: docs
+  (# Char#, Int# #)
+indexUtf8Array# src# i# = 
+  let !b0# = GHC.indexWord8Array# src# i# 
+   in case lengthUtf8Word8# b0# GHC.-# 1# of 
+        3# -> 
+          let !b1# = GHC.indexWord8Array# src# (i# GHC.+# 1#) 
+              !b2# = GHC.indexWord8Array# src# (i# GHC.+# 2#) 
+              !b3# = GHC.indexWord8Array# src# (i# GHC.+# 3#) 
+           in (# chr4# b0# b1# b2# b3#, 4# #)
+        2# -> 
+          let !b1# = GHC.indexWord8Array# src# (i# GHC.+# 1#) 
+              !b2# = GHC.indexWord8Array# src# (i# GHC.+# 2#) 
+           in (# chr3# b0# b1# b2#, 3# #)
+        1# -> 
+          let !b1# = GHC.indexWord8Array# src# (i# GHC.+# 1#) 
+           in (# chr2# b0# b1#, 2# #)
+        0# -> 
+          (# chr1# b0#, 1# #)
+        n# -> 
+          errorWithoutStackTrace (shows 'indexUtf8Array# ": unknown UTF-8 leader: " ++ show (I# n#))
 
 -- | TODO: docs
 --
@@ -157,6 +188,7 @@ ord2# (charToWord# -> x#) =
 -- | TODO: docs
 --
 -- @since 1.0.0
+
 ord3# :: Char# -> (# Word8#, Word8#, Word8# #)
 ord3# (charToWord# -> x#) =
   let !b0# = GHC.or# 0xe0## (GHC.and# 0xff## (GHC.uncheckedShiftRL# x# 12#))
@@ -175,6 +207,12 @@ ord4# (charToWord# -> x#) =
       !b3# = GHC.or# 0x80## (GHC.and# 0x3f## (GHC.uncheckedShiftRL# x# 0#))
    in (# GHC.wordToWord8# b0#, GHC.wordToWord8# b1#, GHC.wordToWord8# b2#, GHC.wordToWord8# b3# #)
 
+-- ord4# :: Char# -> (# Word8#, Word8#, Word8#, Word8# #)
+-- ord4# (charToWord# -> b0#) =
+--   let !b1# = GHC.and# b0# 0xff3f3f3f##
+--       !b2# = GHC.or#  b1# 0xf0808080##
+--    in Vec4x8.unpack# (GHC.wordToWord32# b2#)
+
 -- Decoding --------------------------------------------------------------------
 
 -- | TODO
@@ -188,8 +226,8 @@ chr1# x# = wordToChar# (GHC.word8ToWord# x#)
 -- @since 1.0.0
 chr2# :: Word8# -> Word8# -> Char#
 chr2# x# y# =
-  let !b0# = GHC.uncheckedShiftL# (GHC.minusWord# (GHC.word8ToWord# x#) 0xC0##) 6#
-      !b1# = GHC.uncheckedShiftL# (GHC.minusWord# (GHC.word8ToWord# y#) 0x80##) 0#
+  let !b0# = GHC.uncheckedShiftL# (GHC.and# (GHC.word8ToWord# x#) 0x3f##) 6#
+      !b1# = GHC.uncheckedShiftL# (GHC.and# (GHC.word8ToWord# y#) 0x7f##) 0#
    in wordToChar# (GHC.plusWord# b0# b1#)
 
 -- | TODO
@@ -197,9 +235,9 @@ chr2# x# y# =
 -- @since 1.0.0
 chr3# :: Word8# -> Word8# -> Word8# -> Char#
 chr3# x# y# z# =
-  let !b0# = GHC.uncheckedShiftL# (GHC.minusWord# (GHC.word8ToWord# x#) 0xE0##) 12#
-      !b1# = GHC.uncheckedShiftL# (GHC.minusWord# (GHC.word8ToWord# y#) 0x80##) 6#
-      !b2# = GHC.uncheckedShiftL# (GHC.minusWord# (GHC.word8ToWord# z#) 0x80##) 0#
+  let !b0# = GHC.uncheckedShiftL# (GHC.and# (GHC.word8ToWord# x#) 0x1f##) 12#
+      !b1# = GHC.uncheckedShiftL# (GHC.and# (GHC.word8ToWord# y#) 0x7f##) 6#
+      !b2# = GHC.uncheckedShiftL# (GHC.and# (GHC.word8ToWord# z#) 0x7f##) 0#
    in wordToChar# (GHC.plusWord# b0# (GHC.plusWord# b1# b2#))
 
 -- | TODO
@@ -207,10 +245,10 @@ chr3# x# y# z# =
 -- @since 1.0.0
 chr4# :: Word8# -> Word8# -> Word8# -> Word8# -> Char#
 chr4# x# y# z# w# =
-  let !b0# = GHC.uncheckedShiftL# (GHC.minusWord# (GHC.word8ToWord# x#) 0xF0##) 18#
-      !b1# = GHC.uncheckedShiftL# (GHC.minusWord# (GHC.word8ToWord# y#) 0x80##) 12#
-      !b2# = GHC.uncheckedShiftL# (GHC.minusWord# (GHC.word8ToWord# z#) 0x80##) 6#
-      !b3# = GHC.uncheckedShiftL# (GHC.minusWord# (GHC.word8ToWord# w#) 0x80##) 0#
+  let !b0# = GHC.uncheckedShiftL# (GHC.and# (GHC.word8ToWord# x#) 0x0f##) 18#
+      !b1# = GHC.uncheckedShiftL# (GHC.and# (GHC.word8ToWord# y#) 0x7f##) 12#
+      !b2# = GHC.uncheckedShiftL# (GHC.and# (GHC.word8ToWord# z#) 0x7f##) 6#
+      !b3# = GHC.uncheckedShiftL# (GHC.and# (GHC.word8ToWord# w#) 0x7f##) 0#
    in wordToChar# (GHC.plusWord# b0# (GHC.plusWord# b1# (GHC.plusWord# b2# b3#)))
 
 -- Query -----------------------------------------------------------------------

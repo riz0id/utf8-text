@@ -15,6 +15,7 @@
 -- @since 1.0.0
 module Data.Utf8 (
   -- * ByteArray
+  indexUtf8Array,
   readUtf8Array,
   writeUtf8Array,
 
@@ -39,13 +40,21 @@ module Data.Utf8 (
 
 import Control.Monad.Primitive (PrimMonad, PrimState, primitive)
 
-import Data.Primitive.ByteArray (MutableByteArray (..), MutableByteArray#)
+import Data.Primitive.ByteArray (MutableByteArray (..), ByteArray (..))
 import Data.Utf8.Prim qualified as Prim
 
 import GHC.Exts (Char (C#), Int (I#))
 import GHC.Word (Word16 (W16#), Word32 (W32#), Word8 (W8#))
 
 -- ByteArray -------------------------------------------------------------------
+
+-- | TODO: docs
+--
+-- @since 1.0.0
+indexUtf8Array :: ByteArray -> Int -> (Char, Int)
+indexUtf8Array (ByteArray src#) (I# i#) = 
+  case Prim.indexUtf8Array# src# i# of 
+    (# c#, n# #) -> (C# c#, I# n#)
 
 -- | TODO: docs
 --
