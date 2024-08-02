@@ -3,9 +3,10 @@ module Test.Utf8 (testTree) where
 
 import Control.Exception (evaluate)
 
+import Data.Bits ((.|.))
 import Data.Utf8 qualified as Utf8
 
-import Hedgehog (forAll, (===), evalIO, annotate)
+import Hedgehog (annotate, annotateShow, evalIO, forAll, (===))
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 
@@ -32,7 +33,7 @@ testTree =
             y <- forAll (Gen.word8 $ Range.constant 0b1000_0000 0b1011_1111)
             r <- evalIO (evaluate (Utf8.chr2 x y))
             annotate ("Utf8.chr2 x y = " ++ show r)
-            (x, y) === Utf8.ord2 r 
+            (x, y) === Utf8.ord2 r
         ]
     , testGroup
         "chr3"
@@ -42,32 +43,22 @@ testTree =
             z <- forAll (Gen.word8 $ Range.constant 0b1000_0000 0b1011_1111)
             r <- evalIO (evaluate (Utf8.chr3 x y z))
             annotate ("Utf8.chr3 x y z = " ++ show r)
-            (x, y, z) === Utf8.ord3 r 
+            (x, y, z) === Utf8.ord3 r
         ]
     , testGroup
         "chr4"
-        [ testCases "ord4" 100_00 do
-            x <- forAll (Gen.word8 $ Range.constant 0b1111_0000 0b1111_0111)
-            y <- forAll (Gen.word8 $ Range.constant 0b1000_0000 0b1011_1111)
-            z <- forAll (Gen.word8 $ Range.constant 0b1000_0000 0b1011_1111)
-            w <- forAll (Gen.word8 $ Range.constant 0b1000_0000 0b1011_1111)
-            r <- evalIO (evaluate (Utf8.chr4 x y z w))
+        [ testCases "ord4" 10_000 do
+            c            <- forAll Gen.unicodeAll
+            (x, y, z, w) <- evalIO (evaluate (Utf8.ord4 c))
+            annotateShow (x, y, z, w)
+            r            <- evalIO (evaluate (Utf8.chr4 x y z w))
             annotate ("Utf8.chr4 x y z w = " ++ show r)
-            (x, y, z, w) === Utf8.ord4 r 
+            (x, y, z, w) === Utf8.ord4 r
         ]
-    , testGroup
-        "leader-length"
-        [ testCases "ansi" 128 do
-            leader <- forAll Gen.ascii
-            1 === Utf8.lengthUtf8Char leader
-        , testCases "u8" 128 do
-            leader <- forAll (Gen.word8 (Range.constant 0b0000_0000 0b0111_1111))
-            1 === Utf8.lengthUtf8Word8 leader
-        , testCases "u16" 128 do
-            leader <- forAll (Gen.word8 (Range.constant 0b0000_0000 0b0111_1111))
-            1 === Utf8.lengthUtf8Word16 (fromIntegral leader)
-        , testCases "u32" 128 do
-            leader <- forAll (Gen.word8 (Range.constant 0b0000_0000 0b0111_1111))
-            1 === Utf8.lengthUtf8Word32 (fromIntegral leader)
-        ]
+    , testCases "sizeofCharUtf8" 128 do
+        leader <- forAll Gen.ascii
+        1 === Utf8.sizeofCharUtf8 leader
+    , testCases "sizeofLeaderUtf8" 128 do
+        leader <- forAll (Gen.word8 (Range.constant 0b0000_0000 0b0111_1111))
+        1 === Utf8.sizeofLeaderUtf8 leader
     ]

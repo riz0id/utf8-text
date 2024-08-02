@@ -7,15 +7,12 @@ module Test.Compat
   )
 where
 
-import Hedgehog (Property)
-import Test.Tasty (TestName, TestTree, testGroup)
-import qualified Test.Tasty.Hedgehog as Tasty
-
-#if MIN_VERSION_tasty_hedgehog(1,2,0)
-
 import Data.String (fromString)
 
-#endif
+import Hedgehog (Property)
+
+import Test.Tasty (TestName, TestTree, testGroup)
+import Test.Tasty.Hedgehog qualified as Tasty
 
 --------------------------------------------------------------------------------
 

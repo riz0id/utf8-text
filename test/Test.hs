@@ -1,9 +1,8 @@
 module Main (main) where
 
-import Test.Tasty (defaultMain)
 import Test.Compat (TestTree, testGroup)
-
-import Test.Utf8 qualified 
+import Test.Tasty (defaultMain)
+import Test.Utf8 qualified
 
 --------------------------------------------------------------------------------
 

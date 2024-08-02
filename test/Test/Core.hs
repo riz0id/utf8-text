@@ -12,14 +12,14 @@ module Test.Core (
 import Hedgehog (Property, PropertyT, TestLimit, property, withTests)
 
 import Test.Compat (testProp)
-import Test.Tasty (TestTree, TestName, testGroup)
+import Test.Tasty (TestName, TestTree, testGroup)
 
 --------------------------------------------------------------------------------
 
-testCase :: TestName -> PropertyT IO () -> TestTree 
+testCase :: TestName -> PropertyT IO () -> TestTree
 testCase name = testProp name . property
 
-testCases :: TestName -> TestLimit -> PropertyT IO () -> TestTree 
+testCases :: TestName -> TestLimit -> PropertyT IO () -> TestTree
 testCases name n = testPropWithCases name n . property
 
 testPropWithCases :: String -> TestLimit -> Property -> TestTree
