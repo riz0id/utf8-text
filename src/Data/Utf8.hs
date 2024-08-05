@@ -1,4 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 -- |
@@ -44,17 +43,14 @@ module Data.Utf8 (
 import Control.Monad.Primitive (PrimMonad, PrimState)
 
 import Data.Bits (Bits (..))
-import Data.ByteString (ByteString)
-import Data.ByteString qualified as ByteString
-import Data.ByteString.Unsafe qualified as ByteString
 import Data.Char (chr)
 import Data.Primitive.ByteArray (ByteArray (..), MutableByteArray (..))
 import Data.Primitive.ByteArray qualified as ByteArray
+import Data.Utf8.Prim qualified as Prim
 
 import Foreign.Ptr (Ptr, plusPtr)
 
-import GHC.Exts (Word (..))
-import GHC.Exts qualified as GHC
+import GHC.Exts (Char (..), Int (..))
 import GHC.Storable (writeWord8OffPtr)
 import GHC.Word (Word8 (..))
 
@@ -62,15 +58,6 @@ import GHC.Word (Word8 (..))
 
 charToWord :: Char -> Word
 charToWord = fromIntegral . fromEnum
-
-wordToChar :: Word -> Char
-wordToChar = toEnum . fromIntegral
-
-word8ToWord :: Word8 -> Word
-word8ToWord (W8# w#) = W# (GHC.word8ToWord# w#)
-
--- Utf8 ------------------------------------------------------------------------
-
 
 -- Utf8 - Encode ---------------------------------------------------------------
 
@@ -116,37 +103,29 @@ ord4 (charToWord -> x) =
 --
 -- @since 1.0.0
 chr1 :: Word8 -> Char
-chr1 = toEnum . fromIntegral
+chr1 (W8# w#) = C# (Prim.chr1# w#)
+{-# INLINE chr1 #-}
 
 -- | Decode two UTF-8 code units as a character.
 --
 -- @since 1.0.0
 chr2 :: Word8 -> Word8 -> Char
-chr2 x y =
-  let b0 = shiftL (word8ToWord x .&. 0x3f) 6
-      b1 = shiftL (word8ToWord y .&. 0x7f) 0
-   in wordToChar (b0 + b1)
+chr2 (W8# x#) (W8# y#) = C# (Prim.chr2# x# y#)
+{-# INLINE chr2 #-}
 
 -- | Decode three UTF-8 code units as a character.
 --
 -- @since 1.0.0
 chr3 :: Word8 -> Word8 -> Word8 -> Char
-chr3 x y z =
-  let b0 = shiftL (word8ToWord x .&. 0x1f) 12
-      b1 = shiftL (word8ToWord y .&. 0x7f) 6
-      b2 = shiftL (word8ToWord z .&. 0x7f) 0
-   in wordToChar (b0 + b1 + b2)
+chr3 (W8# x#) (W8# y#) (W8# z#) = C# (Prim.chr3# x# y# z#)
+{-# INLINE chr3 #-}
 
 -- | Decode four UTF-8 code units as a character.
 --
 -- @since 1.0.0
 chr4 :: Word8 -> Word8 -> Word8 -> Word8 -> Char
-chr4 x y z w =
-  let b0 = shiftL (word8ToWord x .&. 0x0f) 18
-      b1 = shiftL (word8ToWord y .&. 0x7f) 12
-      b2 = shiftL (word8ToWord z .&. 0x7f) 6
-      b3 = shiftL (word8ToWord w .&. 0x7f) 0
-   in wordToChar (b0 + b1 + b2 + b3)
+chr4 (W8# x#) (W8# y#) (W8# z#) (W8# w#) = C# (Prim.chr4# x# y# z# w#)
+{-# INLINE chr4 #-}
 
 -- Utf8 - Write ----------------------------------------------------------------
 
@@ -220,27 +199,8 @@ writeByteArrayAsUtf8 bxs i c
 --
 -- @since 1.0.0
 indexByteArrayAsUtf8 :: ByteArray -> Int -> (Char, Int)
-indexByteArrayAsUtf8 bxs i
-  | len == 1  = (chr (fromIntegral u1), 1)
-  | len == 2  =
-    let u2 = ByteArray.indexByteArray bxs (i + 1)
-     in (chr2 u1 u2, 2)
-  | len == 3  =
-    let u2 = ByteArray.indexByteArray bxs (i + 1)
-        u3 = ByteArray.indexByteArray bxs (i + 2)
-     in (chr3 u1 u2 u3, 2)
-  | len == 4  =
-    let u2 = ByteArray.indexByteArray bxs (i + 1)
-        u3 = ByteArray.indexByteArray bxs (i + 2)
-        u4 = ByteArray.indexByteArray bxs (i + 3)
-     in (chr4 u1 u2 u3 u4, 2)
-  | otherwise = ('\NUL', 0)
-  where
-    u1 :: Word8
-    u1 = ByteArray.indexByteArray bxs i
-
-    len :: Int
-    len = sizeofLeaderUtf8 u1
+indexByteArrayAsUtf8 (ByteArray bxs#) (I# i#) = case Prim.indexByteArrayAsUtf8# bxs# i# of (# c#, s# #) -> (C# c#, I# s#)
+{-# INLINE indexByteArrayAsUtf8 #-}
 
 -- | TODO: docs
 --
@@ -275,9 +235,6 @@ readByteArrayAsUtf8 bxs i = do
 
 -- Utf8 - Query ----------------------------------------------------------------
 
-utf8LeaderLengthTable :: ByteString
-utf8LeaderLengthTable = ByteString.pack [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0]
-
 -- | Obtain the number of UTF-8 code units that are required to encode the
 -- given 'Char' in UTF-8.
 --
@@ -297,7 +254,4 @@ sizeofCharUtf8 x
 --
 -- @since 1.0.0
 sizeofLeaderUtf8 :: Word8 -> Int
-sizeofLeaderUtf8 leader = fromIntegral (ByteString.unsafeIndex utf8LeaderLengthTable ix)
-  where
-    ix :: Int
-    ix = fromIntegral (shiftR leader 3)
+sizeofLeaderUtf8 (W8# leader#) = I# (Prim.sizeofLeaderUtf8# leader#)

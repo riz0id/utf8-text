@@ -35,8 +35,9 @@ common common
   default-language: Haskell2010
 
   default-extensions:
-    BinaryLiterals BlockArguments ImportQualifiedPost MagicHash
-    NumericUnderscores
+    BangPatterns BinaryLiterals BlockArguments ImportQualifiedPost KindSignatures
+    MagicHash NumericUnderscores RankNTypes TypeApplications
+    UnboxedTuples ViewPatterns
 
   ghc-options:
     -Wall
@@ -62,6 +63,13 @@ library
     -- compile times.
     -O
 
+    -ddump-to-file
+    -ddump-stg-final
+    -ddump-simpl
+    -dppr-cols=120
+    -dsuppress-module-prefixes
+    -dsuppress-uniques
+
     -- `-fmax-simplifier-iterations` is set to keep compile times in check.
     -- The functions in this library are simple and do not need very many
     -- simplifier passes.
@@ -70,13 +78,15 @@ library
     -fregs-iterative
 
   build-depends:
-    , bytestring
     , ghc-prim         >= 0.7.0  && < 0.12
     , primitive
     , template-haskell >= 2.17.0 && < 2.22
 
   exposed-modules:
     Data.Utf8
+    Data.Utf8.Compat
+    Data.Utf8.Prim
+    Data.Utf8.TH
 
 test-suite utf8-text-test
   import:         common

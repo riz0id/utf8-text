@@ -3,7 +3,6 @@ module Test.Utf8 (testTree) where
 
 import Control.Exception (evaluate)
 
-import Data.Bits ((.|.))
 import Data.Utf8 qualified as Utf8
 
 import Hedgehog (annotate, annotateShow, evalIO, forAll, (===))
